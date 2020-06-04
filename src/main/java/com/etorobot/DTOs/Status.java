@@ -1,4 +1,4 @@
-package DTOs;
+package com.etorobot.DTOs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

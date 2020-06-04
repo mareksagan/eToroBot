@@ -1,4 +1,4 @@
-package jobs;
+package com.etorobot.jobs;
 
 import org.quartz.Job;
 
