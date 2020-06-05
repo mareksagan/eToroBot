@@ -22,6 +22,7 @@ public enum BotConfig {
     private static Integer transactionCooldown = null;
     private static Integer dbBufferSize = null;
     private static String timezone = null;
+    private static String taskQueueFilepath = null;
 
     private static Logger logger = LoggerFactory.getLogger(BotConfig.class);
 
@@ -65,6 +66,11 @@ public enum BotConfig {
         return timezone;
     }
 
+    public static String getTaskQueueFilepath() {
+        if (taskQueueFilepath == null) getDataFromProps();
+        return taskQueueFilepath;
+    }
+
     public static void getDataFromProps() {
         InputStream is = null;
 
@@ -85,6 +91,7 @@ public enum BotConfig {
             timezone = props.getProperty("timezone");
             dbBufferSize = Integer.parseInt(props.getProperty("db-buffer-size"));
             transactionCooldown = Integer.parseInt(props.getProperty("transaction-cooldown"));
+            taskQueueFilepath = props.getProperty("task-queue-filepath");
 
             is.close();
         } catch (IOException e) {

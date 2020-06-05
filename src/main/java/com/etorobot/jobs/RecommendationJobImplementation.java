@@ -5,6 +5,7 @@ import com.etorobot.DTOs.NasdaqApiFrame;
 import com.etorobot.config.BotConfig;
 import com.etorobot.state.BotState;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
@@ -12,7 +13,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +23,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 
-public class PricePullingJobImplementation implements PricePullingJob {
-    private FileWriter writer = null;
+public class RecommendationJobImplementation implements RecommendationJob {
+    private Logger logger = LoggerFactory.getLogger(RecommendationJobImplementation.class);
 
-    private Logger logger = LoggerFactory.getLogger(PricePullingJobImplementation.class);
-
-    private double pullNasdaqPrice(String symbol) throws Exception {
+    private double pullPrice(String symbol) throws Exception {
         double price = 0.0;
         try {
             String url = BotConfig.getApiUrl() + symbol + BotConfig.getApiParams();
@@ -64,16 +62,16 @@ public class PricePullingJobImplementation implements PricePullingJob {
                 throw new Exception("Could not get data from Nasdaq API");
             }
 
-            File pricesFile = new File(BotConfig.getDbFilepath() + symbol);
+            File pricesFile = new File(BotConfig.getDbFilepath() + symbol.toLowerCase());
             if (!pricesFile.exists()) pricesFile.createNewFile();
 
-            writer = new FileWriter(pricesFile,true);
+            FileWriter writer = new FileWriter(pricesFile,true);
 
             NLS firstFrame = frames[0];
 
             // Cleaning the price string
             String parsedNumber = firstFrame.getNlsPrice().replaceAll("\\$ ", "");
-            price = 200.0 + new Random().nextDouble()*6.0;//Double.parseDouble(parsedNumber);
+            price = Double.parseDouble(parsedNumber);
             writer.write(price + System.getProperty("line.separator"));
             logger.info(symbol + " - Current price - " + price);
 
@@ -81,15 +79,15 @@ public class PricePullingJobImplementation implements PricePullingJob {
             httpClient.close();
         } catch (IOException | InterruptedException e) {
             logger.error("Could not access prices API - " + e.getMessage());
-            logger.debug(e.getStackTrace().toString());
+            logger.debug(ExceptionUtils.getStackTrace(e));
         }
         return price;
     }
 
-    public int buyOrSell(String symbol) {
+    private int checkTrend(String symbol) {
         int trendIndicator = 0;
         try {
-            Path filePath = Paths.get(BotConfig.getDbFilepath() + symbol);
+            Path filePath = Paths.get(BotConfig.getDbFilepath() + symbol.toLowerCase());
             File dbFile = filePath.toFile();
             long lastLineIndex = Files.lines(filePath).count();
             if (lastLineIndex < 3) throw new IllegalArgumentException("Not enough data to calculate trend");
@@ -116,7 +114,7 @@ public class PricePullingJobImplementation implements PricePullingJob {
             }
         } catch (IOException | IllegalStateException e) {
             logger.error("Could not check trend - " + symbol + " - " + e.getMessage());
-            logger.debug(e.getStackTrace().toString());
+            logger.debug(ExceptionUtils.getStackTrace(e));
         }
         return trendIndicator;
     }
@@ -126,31 +124,40 @@ public class PricePullingJobImplementation implements PricePullingJob {
         try {
             String symbol = (String) jobExecutionContext.getJobDetail().getJobDataMap().get("symbol");
 
-            double price = pullNasdaqPrice(symbol);
+            double price = pullPrice(symbol);
 
-            int trendIndicator = buyOrSell(symbol);
+            int trendIndicator = checkTrend(symbol);
             boolean holdingSymbol = BotState.isHoldingSymbol(symbol);
             int transactionCooldown = BotConfig.getTransactionCooldown();
             int transactionCooldownCounter = BotState.getTransactionCooldownCounter(symbol);
 
             boolean isTransactionReady = transactionCooldownCounter == 0;
-            boolean purchaseConditions = trendIndicator == 1 && !holdingSymbol && isTransactionReady;
-            boolean sellConditions = trendIndicator == 2 && holdingSymbol && isTransactionReady;
+            boolean purchaseConditions = trendIndicator == 2 && !holdingSymbol && isTransactionReady;
+            boolean sellConditions = trendIndicator == 1 && holdingSymbol && isTransactionReady;
 
             if (transactionCooldownCounter > 0) BotState.setTransactionCooldownCounter(symbol, transactionCooldownCounter - 1);
+
+            File tasksFile = new File(BotConfig.getTaskQueueFilepath());
+            if (!tasksFile.exists()) tasksFile.createNewFile();
+
+            FileWriter writer = new FileWriter(tasksFile,true);
 
             if (purchaseConditions) {
                 BotState.setHoldingSymbol(symbol, true);
                 BotState.setTransactionCooldownCounter(symbol, transactionCooldown);
+                writer.write(symbol + "," + price + "," + "BUY" + System.getProperty("line.separator"));
                 logger.info(symbol + " - BUY REQUEST - " + price);
             } else if (sellConditions) {
                 BotState.setHoldingSymbol(symbol, false);
                 BotState.setTransactionCooldownCounter(symbol, transactionCooldown);
+                writer.write(symbol + "," + price + "," + "SELL" + System.getProperty("line.separator"));
                 logger.info(symbol + " - SELL REQUEST - " + price);
             }
+
+            writer.close();
         } catch (Exception e) {
             logger.error("Price pulling error - " + e.getMessage());
-            logger.debug(e.getStackTrace().toString());
+            logger.debug(ExceptionUtils.getStackTrace(e));
         }
 
     }

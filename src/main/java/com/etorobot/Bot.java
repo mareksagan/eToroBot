@@ -1,15 +1,13 @@
 package com.etorobot;
 
-import com.etorobot.jobs.PricePullingJobImplementation;
+import com.etorobot.jobs.RecommendationJobImplementation;
 import com.etorobot.config.BotConfig;
 import com.etorobot.state.BotState;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.nio.file.Paths;
 import java.util.TimeZone;
 
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -23,10 +21,6 @@ public class Bot {
         try {
             scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
-
-            // Cleaning up after unexpected shutdown
-            deleteDbFiles();
-
             scheduleJobs();
         } catch (Exception e) {
             logger.error("Bot error - " + e.getMessage());
@@ -42,7 +36,7 @@ public class Bot {
     }
 
     private static void schedulePricePulling(String symbol, String cron) throws SchedulerException {
-        JobDetail pricePullingJob = JobBuilder.newJob(PricePullingJobImplementation.class)
+        JobDetail pricePullingJob = JobBuilder.newJob(RecommendationJobImplementation.class)
                 .usingJobData("symbol", symbol)
                 .storeDurably(true)
                 .build();
@@ -62,11 +56,7 @@ public class Bot {
             scheduler.shutdown();
         } catch (SchedulerException e) {
             logger.error("Could not stop the scheduler - " + e.getMessage());
+            logger.debug(ExceptionUtils.getStackTrace(e));
         }
-    }
-
-    private static void deleteDbFiles() {
-        for (String symbol : BotConfig.getSymbols())
-            Paths.get(BotConfig.getDbFilepath() + symbol).toFile().delete();
     }
 }
