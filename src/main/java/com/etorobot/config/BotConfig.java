@@ -27,8 +27,26 @@ public enum BotConfig {
     private static Integer transactionAmount = null;
     private static Integer initialMultiplier = null;
     private static Integer multiplierStep = null;
+    private static Integer successRate = null;
+    private static String etoroLogin = null;
+    private static String etoroPassword = null;
 
     private static Logger logger = LoggerFactory.getLogger(BotConfig.class);
+
+    public static String getEtoroLogin() {
+        if (etoroLogin == null) getDataFromProps();
+        return etoroLogin;
+    }
+
+    public static String getEtoroPassword() {
+        if (etoroPassword == null) getDataFromProps();
+        return etoroPassword;
+    }
+
+    public static Integer getSuccessRate() {
+        if (successRate == null) getDataFromProps();
+        return successRate;
+    }
 
     public static Integer getTransactionAmount() {
         if (transactionAmount == null) getDataFromProps();
@@ -120,6 +138,9 @@ public enum BotConfig {
             initialMultiplier = Integer.parseInt(props.getProperty("initial-multiplier"));
             transactionAmount = Integer.parseInt(props.getProperty("transaction-amount"));
             multiplierStep = Integer.parseInt(props.getProperty("multiplier-step"));
+            successRate = Integer.parseInt(props.getProperty("success-rate"));
+            etoroLogin = props.getProperty("etoro-login");
+            etoroPassword = props.getProperty("etoro-password");
 
             is.close();
         } catch (IOException e) {
