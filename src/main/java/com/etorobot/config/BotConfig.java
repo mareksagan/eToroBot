@@ -27,7 +27,7 @@ public enum BotConfig {
     private static Integer transactionAmount = null;
     private static Integer initialMultiplier = null;
     private static Integer multiplierStep = null;
-    private static Integer successRate = null;
+    private static Double expectedSuccessRate = null;
     private static String etoroLogin = null;
     private static String etoroPassword = null;
 
@@ -43,9 +43,9 @@ public enum BotConfig {
         return etoroPassword;
     }
 
-    public static Integer getSuccessRate() {
-        if (successRate == null) getDataFromProps();
-        return successRate;
+    public static Double getExpectedSuccessRate() {
+        if (expectedSuccessRate == null) getDataFromProps();
+        return expectedSuccessRate;
     }
 
     public static Integer getTransactionAmount() {
@@ -138,7 +138,7 @@ public enum BotConfig {
             initialMultiplier = Integer.parseInt(props.getProperty("initial-multiplier"));
             transactionAmount = Integer.parseInt(props.getProperty("transaction-amount"));
             multiplierStep = Integer.parseInt(props.getProperty("multiplier-step"));
-            successRate = Integer.parseInt(props.getProperty("success-rate"));
+            expectedSuccessRate = Double.parseDouble(props.getProperty("expected-success-rate"));
             etoroLogin = props.getProperty("etoro-login");
             etoroPassword = props.getProperty("etoro-password");
 

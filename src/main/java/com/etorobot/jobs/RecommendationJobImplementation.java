@@ -208,9 +208,10 @@ public class RecommendationJobImplementation implements RecommendationJob {
                 }
                 double successRate = winCounter / (double) (winCounter + failCounter);
                 int multiplierStep = BotConfig.getMultiplierStep();
-                if (successRate > 0.8) {
+                double expectedSuccessRate = BotConfig.getExpectedSuccessRate();
+                if (successRate > expectedSuccessRate) {
                     BotState.setMultiplier(symbol, multiplier + multiplierStep);
-                } else if (successRate <= 0.8) {
+                } else if (successRate <= expectedSuccessRate) {
                     BotState.setMultiplier(symbol, multiplier - multiplierStep);
                 }
                 writer.write(symbol + "," + lastPrice + "," + "SELL" + System.getProperty("line.separator"));
