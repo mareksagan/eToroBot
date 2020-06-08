@@ -191,8 +191,14 @@ public class RecommendationJobImplementation implements RecommendationJob {
                 BotState.setHoldingSymbol(symbol, false);
                 BotState.setTransactionCooldownCounter(symbol, transactionCooldown);
                 double lastBuyPrice = BotState.getLastPrice(symbol);
-                int winCounter = BotState.getWinCounter(symbol);
-                int failCounter = BotState.getFailCounter(symbol);
+                Integer winCounter = BotState.getWinCounter(symbol);
+                if (winCounter == null) {
+                    BotState.setWinCounter(symbol, 0);
+                }
+                Integer failCounter = BotState.getFailCounter(symbol);
+                if (failCounter == null) {
+                    BotState.setFailCounter(symbol, 0);
+                }
                 if (lastPrice > lastBuyPrice) {
                     BotState.setWinCounter(symbol, winCounter + 1);
                     winCounter = BotState.getWinCounter(symbol);
@@ -200,11 +206,11 @@ public class RecommendationJobImplementation implements RecommendationJob {
                     BotState.setFailCounter(symbol, failCounter + 1);
                     failCounter = BotState.getFailCounter(symbol);
                 }
-                double successRate = winCounter / (double) failCounter;
+                double successRate = winCounter / (double) (winCounter + failCounter);
                 int multiplierStep = BotConfig.getMultiplierStep();
-                if (successRate > 1) {
+                if (successRate > 0.8) {
                     BotState.setMultiplier(symbol, multiplier + multiplierStep);
-                } else if (successRate <= 1) {
+                } else if (successRate <= 0.8) {
                     BotState.setMultiplier(symbol, multiplier - multiplierStep);
                 }
                 writer.write(symbol + "," + lastPrice + "," + "SELL" + System.getProperty("line.separator"));
