@@ -24,6 +24,7 @@ public class Bot {
             scheduleJobs();
         } catch (Exception e) {
             logger.error("Bot error - " + e.getMessage());
+            logger.debug(ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -31,7 +32,7 @@ public class Bot {
         for (String symbol : BotConfig.getSymbols()) {
             BotState.setHoldingSymbol(symbol, false);
             BotState.setTransactionCooldownCounter(symbol, 0);
-            schedulePricePulling(symbol, BotConfig.getCronMarketOpen());
+            schedulePricePulling(symbol, BotConfig.getCronMarketTime());
         }
     }
 

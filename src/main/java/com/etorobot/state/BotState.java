@@ -1,7 +1,5 @@
 package com.etorobot.state;
 
-import org.quartz.JobKey;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,8 +8,44 @@ public enum BotState {
 
     private static Map<String,Boolean> holdingSymbol = new HashMap<>();
     private static Map<String,Integer> transactionCooldownCounter = new HashMap<>();
+    private static Map<String,Integer> multipliers = new HashMap<>();
+    private static Map<String,Double> lastBuyPrices = new HashMap<>();
+    private static Map<String,Integer> failCounter = new HashMap<>();
+    private static Map<String,Integer> winCounter = new HashMap<>();
 
-    public static boolean isHoldingSymbol(String symbol) {
+    public static Integer getFailCounter(String symbol) {
+        return failCounter.get(symbol);
+    }
+
+    public static void setFailCounter(String symbol, int value) {
+        BotState.failCounter.put(symbol, value);
+    }
+
+    public static Integer getWinCounter(String symbol) {
+        return winCounter.get(symbol);
+    }
+
+    public static void setWinCounter(String symbol, int value) {
+        BotState.winCounter.put(symbol, value);
+    }
+
+    public static Double getLastPrice(String symbol) {
+        return lastBuyPrices.get(symbol);
+    }
+
+    public static void setLastBuyPrice(String symbol, double value) {
+        BotState.lastBuyPrices.put(symbol, value);
+    }
+
+    public static Integer getMultiplier(String symbol) {
+        return multipliers.get(symbol);
+    }
+
+    public static void setMultiplier(String symbol, int value) {
+        BotState.multipliers.put(symbol, value);
+    }
+
+    public static Boolean isHoldingSymbol(String symbol) {
         return holdingSymbol.get(symbol);
     }
 
@@ -19,7 +53,7 @@ public enum BotState {
         BotState.holdingSymbol.put(symbol, value);
     }
 
-    public static int getTransactionCooldownCounter(String symbol) {
+    public static Integer getTransactionCooldownCounter(String symbol) {
         return transactionCooldownCounter.get(symbol);
     }
 

@@ -2,6 +2,8 @@ package com.etorobot.jobs;
 
 import com.etorobot.config.BotConfig;
 import com.etorobot.enums.RunModeEnum;
+import com.etorobot.pages.EToroLoginPage;
+import org.openqa.selenium.WebDriver;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +20,7 @@ public class TradingJobImplementation implements TradingJob {
     }
 
     private void login(String login, String password) {
-
+        //EToroLoginPage page = new EToroLoginPage(new ChromeClient(BotConfig.getSeleniumDriverFilepath()));
     }
 
     private void buySymbol(double price, String symbol) {

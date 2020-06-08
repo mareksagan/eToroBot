@@ -17,14 +17,38 @@ public enum BotConfig {
     private static List<String> symbols = null;
     private static String apiUrl = null;
     private static String apiParams = null;
+    private static Integer apiLimit = null;
     private static String dbFilepath = null;
-    private static String cronMarketOpen = null;
+    private static String cronMarketTime = null;
     private static Integer transactionCooldown = null;
-    private static Integer dbBufferSize = null;
     private static String timezone = null;
     private static String taskQueueFilepath = null;
+    private static String seleniumDriverFilepath = null;
+    private static Integer transactionAmount = null;
+    private static Integer initialMultiplier = null;
+    private static Integer multiplierStep = null;
 
     private static Logger logger = LoggerFactory.getLogger(BotConfig.class);
+
+    public static Integer getTransactionAmount() {
+        if (transactionAmount == null) getDataFromProps();
+        return transactionAmount;
+    }
+
+    public static Integer getInitialMultiplier() {
+        if (initialMultiplier == null) getDataFromProps();
+        return initialMultiplier;
+    }
+
+    public static Integer getMultiplierStep() {
+        if (multiplierStep == null) getDataFromProps();
+        return multiplierStep;
+    }
+
+    public static Integer getApiLimit() {
+        if (apiLimit == null) getDataFromProps();
+        return apiLimit;
+    }
 
     public static List<String> getSymbols() {
         if (symbols == null) getDataFromProps();
@@ -46,14 +70,9 @@ public enum BotConfig {
         return dbFilepath;
     }
 
-    public static String getCronMarketOpen() {
-        if (cronMarketOpen == null) getDataFromProps();
-        return cronMarketOpen;
-    }
-
-    public static Integer getDbBufferSize() {
-        if (dbBufferSize == null) getDataFromProps();
-        return dbBufferSize;
+    public static String getCronMarketTime() {
+        if (cronMarketTime == null) getDataFromProps();
+        return cronMarketTime;
     }
 
     public static Integer getTransactionCooldown() {
@@ -71,6 +90,11 @@ public enum BotConfig {
         return taskQueueFilepath;
     }
 
+    public static String getSeleniumDriverFilepath() {
+        if (seleniumDriverFilepath == null) getDataFromProps();
+        return seleniumDriverFilepath;
+    }
+
     public static void getDataFromProps() {
         InputStream is = null;
 
@@ -86,12 +110,16 @@ public enum BotConfig {
             for (String elem : symbolsInputString.split(",")) symbols.add(elem.trim());
             apiUrl = props.getProperty("api");
             apiParams = props.getProperty("api-params");
+            apiLimit = Integer.parseInt(props.getProperty("api-limit"));
             dbFilepath = props.getProperty("db-filepath");
-            cronMarketOpen = props.getProperty("cron-market-open");
+            cronMarketTime = props.getProperty("cron-market-time");
             timezone = props.getProperty("timezone");
-            dbBufferSize = Integer.parseInt(props.getProperty("db-buffer-size"));
             transactionCooldown = Integer.parseInt(props.getProperty("transaction-cooldown"));
             taskQueueFilepath = props.getProperty("task-queue-filepath");
+            seleniumDriverFilepath = props.getProperty("selenium-driver-filepath");
+            initialMultiplier = Integer.parseInt(props.getProperty("initial-multiplier"));
+            transactionAmount = Integer.parseInt(props.getProperty("transaction-amount"));
+            multiplierStep = Integer.parseInt(props.getProperty("multiplier-step"));
 
             is.close();
         } catch (IOException e) {
