@@ -24,8 +24,9 @@ public enum BotConfig {
     private static String timezone = null;
     private static String taskQueueFilepath = null;
     private static String seleniumDriverFilepath = null;
-    private static Integer transactionAmount = null;
+    private static Double transactionAmount = null;
     private static Integer initialMultiplier = null;
+    private static Integer maxMultiplier = null;
     private static Integer multiplierStep = null;
     private static Double expectedSuccessRate = null;
     private static String etoroLogin = null;
@@ -48,7 +49,7 @@ public enum BotConfig {
         return expectedSuccessRate;
     }
 
-    public static Integer getTransactionAmount() {
+    public static Double getTransactionAmount() {
         if (transactionAmount == null) getDataFromProps();
         return transactionAmount;
     }
@@ -56,6 +57,11 @@ public enum BotConfig {
     public static Integer getInitialMultiplier() {
         if (initialMultiplier == null) getDataFromProps();
         return initialMultiplier;
+    }
+
+    public static Integer getMaxMultiplier() {
+        if (maxMultiplier == null) getDataFromProps();
+        return maxMultiplier;
     }
 
     public static Integer getMultiplierStep() {
@@ -136,7 +142,8 @@ public enum BotConfig {
             taskQueueFilepath = props.getProperty("task-queue-filepath");
             seleniumDriverFilepath = props.getProperty("selenium-driver-filepath");
             initialMultiplier = Integer.parseInt(props.getProperty("initial-multiplier"));
-            transactionAmount = Integer.parseInt(props.getProperty("transaction-amount"));
+            maxMultiplier = Integer.parseInt(props.getProperty("max-multiplier"));
+            transactionAmount = Double.parseDouble(props.getProperty("transaction-amount"));
             multiplierStep = Integer.parseInt(props.getProperty("multiplier-step"));
             expectedSuccessRate = Double.parseDouble(props.getProperty("expected-success-rate"));
             etoroLogin = props.getProperty("etoro-login");

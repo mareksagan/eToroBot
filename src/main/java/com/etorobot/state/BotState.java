@@ -12,6 +12,15 @@ public enum BotState {
     private static Map<String,Double> lastBuyPrices = new HashMap<>();
     private static Map<String,Integer> failCounter = new HashMap<>();
     private static Map<String,Integer> winCounter = new HashMap<>();
+    private static Double saldo = 0.0;
+
+    public static Double getSaldo() {
+        return saldo;
+    }
+
+    public static void addSaldo(double value) {
+        saldo = BotState.saldo + value;
+    }
 
     public static Integer getFailCounter(String symbol) {
         return failCounter.get(symbol);
