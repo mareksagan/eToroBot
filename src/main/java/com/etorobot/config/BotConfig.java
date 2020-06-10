@@ -24,11 +24,8 @@ public enum BotConfig {
     private static String timezone = null;
     private static String taskQueueFilepath = null;
     private static String seleniumDriverFilepath = null;
-    private static Double transactionAmount = null;
-    private static Integer initialMultiplier = null;
-    private static Integer maxMultiplier = null;
-    private static Integer multiplierStep = null;
-    private static Double expectedSuccessRate = null;
+    private static Double moneyAmount = null;
+    private static Integer sequenceMultiplier = null;
     private static String etoroLogin = null;
     private static String etoroPassword = null;
 
@@ -44,29 +41,14 @@ public enum BotConfig {
         return etoroPassword;
     }
 
-    public static Double getExpectedSuccessRate() {
-        if (expectedSuccessRate == null) getDataFromProps();
-        return expectedSuccessRate;
+    public static Double getMoneyAmount() {
+        if (moneyAmount == null) getDataFromProps();
+        return moneyAmount;
     }
 
-    public static Double getTransactionAmount() {
-        if (transactionAmount == null) getDataFromProps();
-        return transactionAmount;
-    }
-
-    public static Integer getInitialMultiplier() {
-        if (initialMultiplier == null) getDataFromProps();
-        return initialMultiplier;
-    }
-
-    public static Integer getMaxMultiplier() {
-        if (maxMultiplier == null) getDataFromProps();
-        return maxMultiplier;
-    }
-
-    public static Integer getMultiplierStep() {
-        if (multiplierStep == null) getDataFromProps();
-        return multiplierStep;
+    public static Integer getSequenceMultiplier() {
+        if (sequenceMultiplier == null) getDataFromProps();
+        return sequenceMultiplier;
     }
 
     public static Integer getApiLimit() {
@@ -141,11 +123,8 @@ public enum BotConfig {
             transactionCooldown = Integer.parseInt(props.getProperty("transaction-cooldown"));
             taskQueueFilepath = props.getProperty("task-queue-filepath");
             seleniumDriverFilepath = props.getProperty("selenium-driver-filepath");
-            initialMultiplier = Integer.parseInt(props.getProperty("initial-multiplier"));
-            maxMultiplier = Integer.parseInt(props.getProperty("max-multiplier"));
-            transactionAmount = Double.parseDouble(props.getProperty("transaction-amount"));
-            multiplierStep = Integer.parseInt(props.getProperty("multiplier-step"));
-            expectedSuccessRate = Double.parseDouble(props.getProperty("expected-success-rate"));
+            sequenceMultiplier = Integer.parseInt(props.getProperty("sequence-multiplier"));
+            moneyAmount = Double.parseDouble(props.getProperty("money-amount"));
             etoroLogin = props.getProperty("etoro-login");
             etoroPassword = props.getProperty("etoro-password");
 

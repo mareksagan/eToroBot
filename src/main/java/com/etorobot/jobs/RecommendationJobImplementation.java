@@ -119,14 +119,14 @@ public class RecommendationJobImplementation implements RecommendationJob {
     private boolean getBuyConditions(String symbol, int multiplier) throws IOException {
         boolean result = true;
         for (int i = 1; i < multiplier; i++)
-            result = result && getLastPrice(symbol, i+1) <= getLastPrice(symbol, i);
+            result = result && getLastPrice(symbol, i+1) >= getLastPrice(symbol, i);
         return result;
     }
 
     private boolean getSellConditions(String symbol, int multiplier) throws IOException {
         boolean result = true;
         for (int i = 1; i < multiplier; i++)
-            result = result && getLastPrice(symbol, i+1) >= getLastPrice(symbol, i);
+            result = result && getLastPrice(symbol, i+1) <= getLastPrice(symbol, i);
         return result;
     }
 
@@ -134,7 +134,7 @@ public class RecommendationJobImplementation implements RecommendationJob {
         int trendIndicator = 0;
         try {
             boolean holdConditions = getHoldConditions(symbol, multiplier);
-            boolean buyConditions = getBuyConditions(symbol, multiplier);
+            boolean buyConditions = getBuyConditions(symbol, multiplier  / 2);
             boolean sellConditions = getSellConditions(symbol, multiplier);
             if (holdConditions) {
                 trendIndicator = 0;
@@ -159,7 +159,7 @@ public class RecommendationJobImplementation implements RecommendationJob {
 
             Integer multiplier = BotState.getMultiplier(symbol);
             if (multiplier == null) {
-                int initialMultiplier = BotConfig.getInitialMultiplier();
+                int initialMultiplier = BotConfig.getSequenceMultiplier();
                 BotState.setMultiplier(symbol, initialMultiplier);
                 multiplier = initialMultiplier;
             }
@@ -201,7 +201,7 @@ public class RecommendationJobImplementation implements RecommendationJob {
                     BotState.setFailCounter(symbol, 0);
                     failCounter = BotState.getFailCounter(symbol);
                 }
-                double amountPerStock = BotConfig.getTransactionAmount() / (double) BotConfig.getSymbols().size();
+                double amountPerStock = BotConfig.getMoneyAmount() / (double) BotConfig.getSymbols().size();
                 double relativeGain = (lastPrice - lastBuyPrice) * (amountPerStock / lastPrice);
                 if (lastPrice > lastBuyPrice) {
                     BotState.setWinCounter(symbol, winCounter + 1);
@@ -215,22 +215,7 @@ public class RecommendationJobImplementation implements RecommendationJob {
                     logger.warn(symbol + " - LOSS - " + relativeGain);
                 }
                 double successRate = winCounter / (double) (winCounter + failCounter);
-                logger.info(symbol + " - Current multiplier rate - " + multiplier);
-                int multiplierStep = BotConfig.getMultiplierStep();
-                double expectedSuccessRate = BotConfig.getExpectedSuccessRate();
-                if (successRate > expectedSuccessRate) {
-                    int updatedMultiplier = multiplier - multiplierStep;
-                    if (updatedMultiplier >= 2) BotState.setMultiplier(symbol, updatedMultiplier);
-                } else if (successRate <= expectedSuccessRate) {
-                    int updatedMultiplier = multiplier + multiplierStep;
-                    int maxMultiplier = BotConfig.getMaxMultiplier();
-                    // Unfreeze high multiplier tickers
-                    if (updatedMultiplier <= maxMultiplier) {
-                        BotState.setMultiplier(symbol, updatedMultiplier);
-                    } else if (updatedMultiplier > maxMultiplier) {
-                        BotState.setMultiplier(symbol, multiplier - multiplierStep);
-                    }
-                }
+                logger.info(symbol + " - Current success rate - " + successRate);
                 writer.write(symbol + "," + lastPrice + "," + "SELL" + System.getProperty("line.separator"));
                 logger.info(symbol + " - SELL REQUEST - " + lastPrice + " - " + BotState.getSaldo());
             }
