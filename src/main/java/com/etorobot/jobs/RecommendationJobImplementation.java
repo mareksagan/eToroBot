@@ -25,8 +25,8 @@ import java.nio.file.Paths;
 public class RecommendationJobImplementation implements RecommendationJob {
     private Logger logger = LoggerFactory.getLogger(RecommendationJobImplementation.class);
 
-    private double pullPrice(String symbol) throws Exception {
-        double lastPrice = 0.0;
+    private Double pullPrice(String symbol) throws Exception {
+        Double lastPrice = 0.0;
         try {
             String url = BotConfig.getApiUrl() + symbol + BotConfig.getApiParams() + BotConfig.getApiLimit();
 
@@ -97,8 +97,15 @@ public class RecommendationJobImplementation implements RecommendationJob {
             BotState.addTPV(bigTpv.longValue());
             BotState.addVolume(volumeSum);
 
-            Double currentVWAP = precision * (BotState.getTotalTPV() / BotState.getTotalVolume().doubleValue());
-            long vwap = currentVWAP.longValue();
+            Double currentVWAP = BotState.getTotalTPV() / BotState.getTotalVolume().doubleValue();
+            Long longVwap = currentVWAP.longValue();
+            Long vwap = Double.valueOf(precision * currentVWAP).longValue();
+
+            Long longLastPrice = Double.valueOf(precision * lastPrice).longValue();
+
+            if (longVwap == longLastPrice) logger.info(symbol + " - VWAP - CROSSING");
+            else if (longVwap > longLastPrice) logger.info(symbol + " - VWAP - BELOW");
+            else if (longVwap < longLastPrice) logger.info(symbol + " - VWAP - ABOVE");
 
             // Write VWAP
             writer.write(vwap + System.getProperty("line.separator"));
