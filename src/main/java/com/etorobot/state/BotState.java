@@ -7,12 +7,30 @@ public enum BotState {
     INSTANCE;
 
     private static Map<String,Boolean> holdingSymbol = new HashMap<>();
-    private static Map<String,Integer> transactionCooldownCounter = new HashMap<>();
+    private static Map<String,Integer> tradeCooldownCounter = new HashMap<>();
     private static Map<String,Integer> multipliers = new HashMap<>();
     private static Map<String,Double> lastBuyPrices = new HashMap<>();
     private static Map<String,Integer> failCounter = new HashMap<>();
     private static Map<String,Integer> winCounter = new HashMap<>();
+    private static Long totalTPV = 0L;
+    private static Long totalVolume = 0L;
     private static Double saldo = 0.0;
+
+    public static Long getTotalTPV() {
+        return totalTPV;
+    }
+
+    public static void addTPV(Long totalTPV) {
+        BotState.totalTPV =+ totalTPV;
+    }
+
+    public static Long getTotalVolume() {
+        return totalVolume;
+    }
+
+    public static void addVolume(Long totalVolume) {
+        BotState.totalVolume =+ totalVolume;
+    }
 
     public static Double getSaldo() {
         return saldo;
@@ -63,10 +81,10 @@ public enum BotState {
     }
 
     public static Integer getTransactionCooldownCounter(String symbol) {
-        return transactionCooldownCounter.get(symbol);
+        return tradeCooldownCounter.get(symbol);
     }
 
     public static void setTransactionCooldownCounter(String symbol, int value) {
-        BotState.transactionCooldownCounter.put(symbol, value);
+        BotState.tradeCooldownCounter.put(symbol, value);
     }
 }

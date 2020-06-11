@@ -66,8 +66,9 @@ public class RecommendationJobImplementation implements RecommendationJob {
 
             FileWriter writer = new FileWriter(pricesFile,true);
 
-            Double weightedPriceSum = 0.0;
-            Double volumeSum = 0.0;
+            Long volumeSum = 0L;
+            Double maxValue = 0.0;
+            Double minValue = 0.0;
 
             for (int i = 0; i < frames.length; i++) {
                 // Cleaning the price string
@@ -75,9 +76,11 @@ public class RecommendationJobImplementation implements RecommendationJob {
                 String parsedShareVolume = frames[i].getNlsShareVolume().replaceAll(",", "");
 
                 Double number = Double.parseDouble(parsedNumber);
-                Double volume = Double.parseDouble(parsedShareVolume);
+                Long volume = Long.parseLong(parsedShareVolume);
 
-                weightedPriceSum =+  number * volume;
+                if (number > maxValue) maxValue = number;
+                if (number < minValue) minValue = number;
+
                 volumeSum =+ volume;
 
                 if (i == 0) {
@@ -86,10 +89,19 @@ public class RecommendationJobImplementation implements RecommendationJob {
                 }
             }
 
-            Double weightedPrice = weightedPriceSum / volumeSum;
+            int precision = BotConfig.getVwapPrecision();
 
-            // Write weighted price
-            writer.write(weightedPrice + System.getProperty("line.separator"));
+            Double tpv = (maxValue + minValue + lastPrice) / 3.0;
+            Double bigTpv = precision * tpv;
+
+            BotState.addTPV(bigTpv.longValue());
+            BotState.addVolume(volumeSum);
+
+            Double currentVWAP = precision * (BotState.getTotalTPV() / BotState.getTotalVolume().doubleValue());
+            long vwap = currentVWAP.longValue();
+
+            // Write VWAP
+            writer.write(vwap + System.getProperty("line.separator"));
 
             writer.close();
             httpClient.close();
@@ -100,33 +112,33 @@ public class RecommendationJobImplementation implements RecommendationJob {
         return lastPrice;
     }
 
-    private double getLastPrice(String symbol, int nLast) throws IOException {
+    private long getLastVwap(String symbol, int nLast) throws IOException {
         Path filePath = Paths.get(BotConfig.getDbFilepath() + symbol.toLowerCase());
         long lastLineIndex = Files.lines(filePath).count();
         final String[] lastLine = { null };
         Files.lines(filePath).skip(lastLineIndex - nLast).findFirst().ifPresent(s -> lastLine[0] = s);
-        Double lastPrice = Double.valueOf(lastLine[0]);
+        long lastPrice = Long.valueOf(lastLine[0]);
         return lastPrice;
     }
 
     private boolean getHoldConditions(String symbol, int multiplier) throws IOException {
         boolean result = true;
         for (int i = 1; i < multiplier; i++)
-            result = result && getLastPrice(symbol, i+1) == getLastPrice(symbol, i);
+            result = result && getLastVwap(symbol, i+1) == getLastVwap(symbol, i);
         return result;
     }
 
     private boolean getBuyConditions(String symbol, int multiplier) throws IOException {
         boolean result = true;
         for (int i = 1; i < multiplier; i++)
-            result = result && getLastPrice(symbol, i+1) >= getLastPrice(symbol, i);
+            result = result && getLastVwap(symbol, i+1) <= getLastVwap(symbol, i);
         return result;
     }
 
     private boolean getSellConditions(String symbol, int multiplier) throws IOException {
         boolean result = true;
         for (int i = 1; i < multiplier; i++)
-            result = result && getLastPrice(symbol, i+1) <= getLastPrice(symbol, i);
+            result = result && getLastVwap(symbol, i+1) >= getLastVwap(symbol, i);
         return result;
     }
 
@@ -134,7 +146,7 @@ public class RecommendationJobImplementation implements RecommendationJob {
         int trendIndicator = 0;
         try {
             boolean holdConditions = getHoldConditions(symbol, multiplier);
-            boolean buyConditions = getBuyConditions(symbol, multiplier  / 2);
+            boolean buyConditions = getBuyConditions(symbol, multiplier);
             boolean sellConditions = getSellConditions(symbol, multiplier);
             if (holdConditions) {
                 trendIndicator = 0;
@@ -164,22 +176,23 @@ public class RecommendationJobImplementation implements RecommendationJob {
                 multiplier = initialMultiplier;
             }
 
-            int trendIndicator = checkTrend(symbol,  multiplier);
+            int trendIndicator = checkTrend(symbol, multiplier);
 
             boolean holdingSymbol = BotState.isHoldingSymbol(symbol);
-            int transactionCooldown = BotConfig.getTransactionCooldown();
+            int transactionCooldown = BotConfig.getTradeCooldown();
             int transactionCooldownCounter = BotState.getTransactionCooldownCounter(symbol);
 
             boolean isTransactionReady = transactionCooldownCounter == 0;
             boolean purchaseConditions = trendIndicator == 1 && !holdingSymbol && isTransactionReady;
             boolean sellConditions = trendIndicator == 2 && holdingSymbol && isTransactionReady;
 
-            if (transactionCooldownCounter > 0) BotState.setTransactionCooldownCounter(symbol, transactionCooldownCounter - 1);
+            if (transactionCooldownCounter > 0)
+                BotState.setTransactionCooldownCounter(symbol, transactionCooldownCounter - 1);
 
             File tasksFile = new File(BotConfig.getTaskQueueFilepath());
             if (!tasksFile.exists()) tasksFile.createNewFile();
 
-            FileWriter writer = new FileWriter(tasksFile,true);
+            FileWriter writer = new FileWriter(tasksFile, true);
 
             if (purchaseConditions) {
                 BotState.setHoldingSymbol(symbol, true);
@@ -201,23 +214,26 @@ public class RecommendationJobImplementation implements RecommendationJob {
                     BotState.setFailCounter(symbol, 0);
                     failCounter = BotState.getFailCounter(symbol);
                 }
-                double amountPerStock = BotConfig.getMoneyAmount() / (double) BotConfig.getSymbols().size();
+                double amountPerStock = Math.round(BotConfig.getMoneyAmount() / (double) BotConfig.getSymbols().size());
                 double relativeGain = (lastPrice - lastBuyPrice) * (amountPerStock / lastPrice);
+                double roundedRelativeGain = roundValue(relativeGain, 100);
                 if (lastPrice > lastBuyPrice) {
                     BotState.setWinCounter(symbol, winCounter + 1);
                     winCounter = BotState.getWinCounter(symbol);
-                    BotState.addSaldo(relativeGain);
-                    logger.info(symbol + " - GAIN - " + relativeGain);
+                    BotState.addSaldo(roundedRelativeGain);
+                    logger.info(symbol + " - GAIN - " + roundedRelativeGain);
                 } else if (lastPrice <= lastBuyPrice) {
                     BotState.setFailCounter(symbol, failCounter + 1);
                     failCounter = BotState.getFailCounter(symbol);
-                    BotState.addSaldo(relativeGain);
-                    logger.warn(symbol + " - LOSS - " + relativeGain);
+                    BotState.addSaldo(roundedRelativeGain);
+                    logger.warn(symbol + " - LOSS - " + roundedRelativeGain);
                 }
                 double successRate = winCounter / (double) (winCounter + failCounter);
-                logger.info(symbol + " - Current success rate - " + successRate);
+                double roundedSuccessRate = roundValue(successRate, 100);
+                double roundedSaldo = roundValue(BotState.getSaldo(), 100);
+                logger.info(symbol + " - Current success rate - " + roundedSuccessRate);
                 writer.write(symbol + "," + lastPrice + "," + "SELL" + System.getProperty("line.separator"));
-                logger.info(symbol + " - SELL REQUEST - " + lastPrice + " - " + BotState.getSaldo());
+                logger.info(symbol + " - SELL REQUEST - " + lastPrice + " - " + roundedSaldo);
             }
 
             writer.close();
@@ -225,6 +241,9 @@ public class RecommendationJobImplementation implements RecommendationJob {
             logger.error("Price pulling error - " + e.getMessage());
             logger.debug(ExceptionUtils.getStackTrace(e));
         }
+    }
 
+    double roundValue(Double value, Integer precision) {
+        return Math.round(value * precision) / precision.doubleValue();
     }
 }

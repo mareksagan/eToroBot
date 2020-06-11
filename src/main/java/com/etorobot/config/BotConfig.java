@@ -20,16 +20,21 @@ public enum BotConfig {
     private static Integer apiLimit = null;
     private static String dbFilepath = null;
     private static String cronMarketTime = null;
-    private static Integer transactionCooldown = null;
+    private static Integer tradeCooldown = null;
     private static String timezone = null;
     private static String taskQueueFilepath = null;
     private static String seleniumDriverFilepath = null;
     private static Double moneyAmount = null;
     private static Integer sequenceMultiplier = null;
+    private static Integer vwapPrecision = null;
     private static String etoroLogin = null;
     private static String etoroPassword = null;
 
     private static Logger logger = LoggerFactory.getLogger(BotConfig.class);
+
+    public static Integer getVwapPrecision() {
+        return vwapPrecision;
+    }
 
     public static String getEtoroLogin() {
         if (etoroLogin == null) getDataFromProps();
@@ -81,13 +86,13 @@ public enum BotConfig {
         return cronMarketTime;
     }
 
-    public static Integer getTransactionCooldown() {
-        if (transactionCooldown == null) getDataFromProps();
-        return transactionCooldown;
+    public static Integer getTradeCooldown() {
+        if (tradeCooldown == null) getDataFromProps();
+        return tradeCooldown;
     }
 
     public static String getTimezone() {
-        if (transactionCooldown == null) getDataFromProps();
+        if (tradeCooldown == null) getDataFromProps();
         return timezone;
     }
 
@@ -120,10 +125,11 @@ public enum BotConfig {
             dbFilepath = props.getProperty("db-filepath");
             cronMarketTime = props.getProperty("cron-market-time");
             timezone = props.getProperty("timezone");
-            transactionCooldown = Integer.parseInt(props.getProperty("transaction-cooldown"));
+            tradeCooldown = Integer.parseInt(props.getProperty("trade-cooldown"));
             taskQueueFilepath = props.getProperty("task-queue-filepath");
             seleniumDriverFilepath = props.getProperty("selenium-driver-filepath");
             sequenceMultiplier = Integer.parseInt(props.getProperty("sequence-multiplier"));
+            vwapPrecision = Integer.parseInt(props.getProperty("vwap-precision"));
             moneyAmount = Double.parseDouble(props.getProperty("money-amount"));
             etoroLogin = props.getProperty("etoro-login");
             etoroPassword = props.getProperty("etoro-password");
