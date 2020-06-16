@@ -33,6 +33,7 @@ public enum BotConfig {
     private static Logger logger = LoggerFactory.getLogger(BotConfig.class);
 
     public static Integer getVwapPrecision() {
+        if (vwapPrecision == null) getDataFromProps();
         return vwapPrecision;
     }
 
